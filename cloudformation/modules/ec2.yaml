@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'EC2 Module'
+
+Parameters:
+  PublicSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Public Subnet ID
+
+  PrivateSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Private Subnet ID
+
+  PublicSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Public Security Group ID
+
+  PrivateSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Private Security Group ID
+
+  AmiId:
+    Type: String
+    Description: AMI ID for EC2 instances
+
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    Description: Instance type for EC2 instances
+
+  KeyName:
+    Type: String
+    Default: lab01-keypair
+    Description: Name of an existing EC2 KeyPair
+
+Resources:
+  PublicEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref PublicSubnetId
+      SecurityGroupIds:
+        - !Ref PublicSecurityGroupId
+      KeyName: !Ref KeyName
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 8
+            VolumeType: gp2
+            DeleteOnTermination: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          apt-get update
+          apt-get install -y apache2
+          systemctl start apache2
+          systemctl enable apache2
+      Tags:
+        - Key: Name
+          Value: lab01-public-ec2
+
+  PrivateEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref PrivateSubnetId
+      SecurityGroupIds:
+        - !Ref PrivateSecurityGroupId
+      KeyName: !Ref KeyName
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 8
+            VolumeType: gp2
+            DeleteOnTermination: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          apt-get update
+          apt-get install -y apache2
+          systemctl start apache2
+          systemctl enable apache2
+      Tags:
+        - Key: Name
+          Value: lab01-private-ec2
+
+Outputs:
+  PublicInstanceId:
+    Description: Public EC2 Instance ID
+    Value: !Ref PublicEC2Instance
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicInstanceId
+
+  PrivateInstanceId:
+    Description: Private EC2 Instance ID
+    Value: !Ref PrivateEC2Instance
+    Export:
+      Name: !Sub ${AWS::StackName}-PrivateInstanceId
+
+  PublicInstancePublicIP:
+    Description: Public IP of the public EC2 instance
+    Value: !GetAtt PublicEC2Instance.PublicIp
+    Export:
+      Name: !Sub ${AWS::StackName}-PublicInstancePublicIP 
