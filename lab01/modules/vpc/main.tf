@@ -4,7 +4,7 @@ resource "aws_vpc" "this" {
   enable_dns_hostnames = true # Hostname nội bộ cho EC2 để gọi nhau
 
   tags = {
-    name = "${var.name}-vpc"
+    Name = "lab01-vpc"
   }
 }
 
@@ -12,7 +12,7 @@ resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
 
   tags = {
-    name = "${var.name}-igw"
+    Name = "lab01-igw"
   }
 }
 
@@ -24,7 +24,7 @@ resource "aws_subnet" "public" {
   map_public_ip_on_launch = true # EC2 trong subnet này tự động có public IP
 
   tags = {
-    name = "${var.name}-public-${count.index}"
+    Name = "lab01-public-subnet-${count.index + 1}"
   }
 }
 
@@ -35,13 +35,17 @@ resource "aws_subnet" "private" {
   availability_zone = var.azs[count.index]
 
   tags = {
-    name = "${var.name}-private-${count.index}"
+    Name = "lab01-private-subnet-${count.index + 1}"
   }
 }
 
 resource "aws_eip" "nat" {
   count  = 1
   domain = "vpc" # EIP này được sử dụng trong VPC
+
+  tags = {
+    Name = "lab01-nat-eip"
+  }
 }
 
 resource "aws_nat_gateway" "this" {
@@ -51,7 +55,7 @@ resource "aws_nat_gateway" "this" {
   depends_on = [aws_internet_gateway.this] # Đảm bảo dependency của NAT Gateway lên IGW
 
   tags = {
-    name = "${var.name}-nat"
+    Name = "lab01-nat-gateway"
   }
 }
 
@@ -60,7 +64,7 @@ resource "aws_route_table" "public" {
   vpc_id = aws_vpc.this.id
 
   tags = {
-    name = "${var.name}-public-rt"
+    Name = "lab01-public-rt"
   }
 }
 
@@ -82,7 +86,7 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.this.id
 
   tags = {
-    name = "${var.name}-private-rt"
+    Name = "lab01-private-rt"
   }
 }
 
@@ -97,4 +101,29 @@ resource "aws_route_table_association" "private" {
   count          = length(var.private_subnet_cidrs)
   route_table_id = aws_route_table.private.id
   subnet_id      = aws_subnet.private[count.index].id
+}
+
+# Default Security Group for VPC
+resource "aws_security_group" "default" {
+  name        = "lab01-default-sg"
+  description = "Default security group for VPC"
+  vpc_id      = aws_vpc.this.id
+
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    self        = true
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "lab01-default-sg"
+  }
 }

@@ -1,8 +1,3 @@
-variable "name" {
-  description = "Prefix tên cho tất cả resource"
-  type = string
-}
-
 variable "vpc_cidr" {
   description = "CIDR block sử dụng bên trong VPC"
   type = string
