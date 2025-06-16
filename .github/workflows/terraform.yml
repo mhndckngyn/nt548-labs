@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - lab02/exercise1
+      - lab02/exercise1/**
   pull_request:
     paths:
-      - lab02/exercise1
+      - lab02/exercise1/**
 
 jobs:
   terraform:
