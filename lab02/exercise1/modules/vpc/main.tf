@@ -1,57 +1,3 @@
-# VPC Flow Logs Role
-resource "aws_iam_role" "vpc_flow_logs" {
-  name = "lab01-vpc-flow-logs-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "vpc-flow-logs.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name = "lab01-vpc-flow-logs-role"
-  }
-}
-
-resource "aws_iam_role_policy" "vpc_flow_logs" {
-  name = "lab01-vpc-flow-logs-policy"
-  role = aws_iam_role.vpc_flow_logs.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams"
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      }
-    ]
-  })
-}
-
-# CloudWatch Log Group for VPC Flow Logs
-resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
-  name              = "/aws/vpc/lab01-flow-logs"
-  retention_in_days = 7
-
-  tags = {
-    Name = "lab01-vpc-flow-logs"
-  }
-}
-
 resource "aws_vpc" "this" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true # Giúp EC2 truy cập Internet bằng DNS
@@ -59,18 +5,6 @@ resource "aws_vpc" "this" {
 
   tags = {
     Name = "lab01-vpc"
-  }
-}
-
-# VPC Flow Logs
-resource "aws_flow_log" "vpc" {
-  iam_role_arn    = aws_iam_role.vpc_flow_logs.arn
-  log_destination = aws_cloudwatch_log_group.vpc_flow_logs.arn
-  traffic_type    = "ALL"
-  vpc_id          = aws_vpc.this.id
-
-  tags = {
-    Name = "lab01-vpc-flow-logs"
   }
 }
 
@@ -87,7 +21,7 @@ resource "aws_subnet" "public" {
   count                   = length(var.public_subnet_cidrs)
   cidr_block              = var.public_subnet_cidrs[count.index]
   availability_zone       = var.azs[count.index]
-  map_public_ip_on_launch = false # Disable auto-assign public IP for security
+  map_public_ip_on_launch = true # EC2 trong subnet này tự động có public IP
 
   tags = {
     Name = "lab01-public-subnet-${count.index + 1}"
@@ -112,8 +46,6 @@ resource "aws_eip" "nat" {
   tags = {
     Name = "lab01-nat-eip"
   }
-
-  depends_on = [aws_internet_gateway.this]
 }
 
 resource "aws_nat_gateway" "this" {
@@ -162,7 +94,7 @@ resource "aws_route_table" "private" {
 resource "aws_route" "private_nat" {
   route_table_id         = aws_route_table.private.id
   destination_cidr_block = "0.0.0.0/0"
-  nat_gateway_id         = aws_nat_gateway.this.id
+  gateway_id             = aws_nat_gateway.this.id
 }
 
 resource "aws_route_table_association" "private" {
@@ -171,15 +103,25 @@ resource "aws_route_table_association" "private" {
   subnet_id      = aws_subnet.private[count.index].id
 }
 
-# Restrictive Default Security Group for VPC
+# Default Security Group for VPC
 resource "aws_security_group" "default" {
   name        = "lab01-default-sg"
-  description = "Restrictive default security group for VPC"
+  description = "Default security group for VPC"
   vpc_id      = aws_vpc.this.id
 
-  # Remove all ingress and egress rules to restrict traffic
-  # No ingress rules - deny all inbound traffic
-  # No egress rules - deny all outbound traffic
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    self        = true
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   tags = {
     Name = "lab01-default-sg"

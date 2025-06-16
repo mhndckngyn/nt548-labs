@@ -13,7 +13,6 @@ resource "aws_security_group" "public" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "SSH access from specific IP"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -21,27 +20,10 @@ resource "aws_security_group" "public" {
   }
 
   egress {
-    description = "HTTPS outbound"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    description = "HTTP outbound"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    description = "SSH to private instances"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    security_groups = [aws_security_group.private.id]
   }
 
   tags = {
@@ -55,7 +37,6 @@ resource "aws_security_group" "private" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "SSH from public security group"
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
@@ -63,22 +44,13 @@ resource "aws_security_group" "private" {
   }
 
   egress {
-    description = "HTTPS outbound"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    description = "HTTP outbound"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
     Name = "${var.project_name}-private-sg"
   }
-}
+} 
