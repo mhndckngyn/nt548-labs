@@ -61,12 +61,12 @@ resource "aws_security_group" "private" {
 
 resource "aws_instance" "public" {
   count = var.create_public_instance ? 1 : 0
-
+  
   ami           = var.ami_id
   instance_type = var.instance_type
   subnet_id     = var.public_subnet_id
   key_name      = var.key_name
-
+  
   vpc_security_group_ids = [aws_security_group.public.id]
 
   tags = {
@@ -76,12 +76,12 @@ resource "aws_instance" "public" {
 
 resource "aws_instance" "private" {
   count = var.create_private_instance ? 1 : 0
-
+  
   ami           = var.ami_id
   instance_type = var.instance_type
   subnet_id     = var.private_subnet_id
   key_name      = var.key_name
-
+  
   vpc_security_group_ids = [aws_security_group.private.id]
 
   tags = {
