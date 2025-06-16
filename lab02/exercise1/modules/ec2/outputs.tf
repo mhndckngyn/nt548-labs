@@ -1,6 +1,6 @@
 output "public_instance_id" {
   description = "ID of the public EC2 instance"
-  value       = length(aws_instance.public) > 0 ? aws_instance.private[0].id : null
+  value       = length(aws_instance.public) > 0 ? aws_instance.public[0].id : null
 }
 
 output "private_instance_id" {
