@@ -7,4 +7,4 @@ azs                  = ["ap-southeast-1a"]
 # EC2 Configuration
 allowed_ssh_cidr = "0.0.0.0/0"
 instance_type    = "t2.micro"
-ami_id           = "ami-0822a7a2356687b0f" 
+ami_id           = "ami-02c7683e4ca3ebf58" 
