@@ -42,11 +42,6 @@ jobs:
           output_format: cli,sarif
           output_file_path: console,checkov_results.sarif
           soft_fail: true
-        
-      - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: checkov_results.sarif
 
       - name: Terraform Init
         run: terraform init
