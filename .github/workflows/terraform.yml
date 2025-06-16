@@ -45,7 +45,7 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -out=plan.tfplan
 
       - name: Run Checkov
         uses: bridgecrewio/checkov-action@v12
