@@ -69,6 +69,12 @@ resource "aws_instance" "public" {
   
   vpc_security_group_ids = [aws_security_group.public.id]
 
+  root_block_device {
+    volume_size           = 20
+    volume_type           = "gp3"
+    delete_on_termination = false # Giữ lại volume nếu instance bị terminate
+  }
+
   tags = {
     Name = "lab01-public-ec2"
   }
