@@ -1,0 +1,100 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Lab01 Infrastructure - Main Template"
+
+Parameters:
+    KeyName:
+        Description: Name of an existing EC2 KeyPair to enable SSH access
+        Type: AWS::EC2::KeyPair::KeyName
+        Default: iac-key
+    AmiId:
+        Description: AMI ID to launch EC2 instances
+        Type: String
+        Default: ami-051f7e7f6c2f40dc1
+
+Resources:
+    VPCStack:
+        Type: AWS::CloudFormation::Stack
+        Properties:
+            TemplateURL: modules/vpc.yaml
+            Parameters:
+                VpcCidr: 10.0.0.0/16
+
+    SubnetsStack:
+        Type: AWS::CloudFormation::Stack
+        DependsOn: VPCStack
+        Properties:
+            TemplateURL: modules/subnets.yaml
+            Parameters:
+                VpcId: !GetAtt VPCStack.Outputs.VpcId
+                PublicSubnetCidr: 10.0.1.0/24
+                PrivateSubnetCidr: 10.0.2.0/24
+                AvailabilityZone: us-east-1a
+
+    GatewayStack:
+        Type: AWS::CloudFormation::Stack
+        DependsOn: [VPCStack, SubnetsStack]
+        Properties:
+            TemplateURL: modules/gateway.yaml
+            Parameters:
+                VpcId: !GetAtt VPCStack.Outputs.VpcId
+                PublicSubnetId: !GetAtt SubnetsStack.Outputs.PublicSubnetId
+
+    RouteTablesStack:
+        Type: AWS::CloudFormation::Stack
+        DependsOn: [VPCStack, SubnetsStack, GatewayStack]
+        Properties:
+            TemplateURL: modules/route-tables.yaml
+            Parameters:
+                VpcId: !GetAtt VPCStack.Outputs.VpcId
+                PublicSubnetId: !GetAtt SubnetsStack.Outputs.PublicSubnetId
+                PrivateSubnetId: !GetAtt SubnetsStack.Outputs.PrivateSubnetId
+                InternetGatewayId: !GetAtt GatewayStack.Outputs.InternetGatewayId
+                NatGatewayId: !GetAtt GatewayStack.Outputs.NatGatewayId
+
+    SecurityGroupsStack:
+        Type: AWS::CloudFormation::Stack
+        DependsOn: VPCStack
+        Properties:
+            TemplateURL: modules/security-groups.yaml
+            Parameters:
+                VpcId: !GetAtt VPCStack.Outputs.VpcId
+                AllowedSSHCidr: 0.0.0.0/0
+
+    EC2Stack:
+        Type: AWS::CloudFormation::Stack
+        DependsOn: [SubnetsStack, SecurityGroupsStack]
+        Properties:
+            TemplateURL: modules/ec2.yaml
+            Parameters:
+                PublicSubnetId: !GetAtt SubnetsStack.Outputs.PublicSubnetId
+                PrivateSubnetId: !GetAtt SubnetsStack.Outputs.PrivateSubnetId
+                PublicSecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.PublicSecurityGroupId
+                PrivateSecurityGroupId: !GetAtt SecurityGroupsStack.Outputs.PrivateSecurityGroupId
+                AmiId: !Ref AmiId
+                InstanceType: t2.micro
+                KeyName: !Ref KeyName
+
+Outputs:
+    VpcId:
+        Description: VPC ID
+        Value: !GetAtt VPCStack.Outputs.VpcId
+
+    PublicSubnetId:
+        Description: Public Subnet ID
+        Value: !GetAtt SubnetsStack.Outputs.PublicSubnetId
+
+    PrivateSubnetId:
+        Description: Private Subnet ID
+        Value: !GetAtt SubnetsStack.Outputs.PrivateSubnetId
+
+    PublicInstanceId:
+        Description: Public EC2 Instance ID
+        Value: !GetAtt EC2Stack.Outputs.PublicInstanceId
+
+    PrivateInstanceId:
+        Description: Private EC2 Instance ID
+        Value: !GetAtt EC2Stack.Outputs.PrivateInstanceId
+
+    PublicInstancePublicIP:
+        Description: Public IP of the public EC2 instance
+        Value: !GetAtt EC2Stack.Outputs.PublicInstancePublicIP

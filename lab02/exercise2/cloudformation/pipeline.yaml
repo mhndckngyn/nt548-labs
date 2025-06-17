@@ -1,0 +1,49 @@
+pipeline:
+    name: IaC-Pipeline
+    roleArn: arn:aws:iam::703172063283:role/nt548
+    artifactStore:
+        type: S3
+        location: nt548-pipeline-artifact
+    stages:
+        - name: Source
+          actions:
+              - name: SourceAction
+                actionTypeId:
+                    category: Source
+                    owner: AWS
+                    provider: CodeCommit
+                    version: "1"
+                outputArtifacts:
+                    - name: SourceOutput
+                configuration:
+                    RepositoryName: nt548-labs
+                    BranchName: main
+        - name: Build
+          actions:
+              - name: BuildAction
+                actionTypeId:
+                    category: Build
+                    owner: AWS
+                    provider: CodeBuild
+                    version: "1"
+                inputArtifacts:
+                    - name: SourceOutput
+                outputArtifacts:
+                    - name: BuildOutput
+                configuration:
+                    ProjectName: nt548-labs-codebuild
+        - name: Deploy
+          actions:
+              - name: DeployCFN
+                actionTypeId:
+                    category: Deploy
+                    owner: AWS
+                    provider: CloudFormation
+                    version: "1"
+                inputArtifacts:
+                    - name: BuildOutput
+                configuration:
+                    ActionMode: CREATE_UPDATE
+                    StackName: IaCStack
+                    TemplatePath: BuildOutput::cloudformation/main.yaml
+                    Capabilities: CAPABILITY_NAMED_IAM

@@ -1,0 +1,8 @@
+project:
+    name: iac-validation
+    regions:
+        - us-east-1
+    template: cloudformation/main.yaml
+    parameters:
+        KeyName: iac-key
+        AmiId: ami-051f7e7f6c2f40dc1

@@ -1,0 +1,14 @@
+version: 0.2
+
+phases:
+    install:
+        runtime-versions:
+            python: 3.8
+        commands:
+            - pip install cfn-lint taskcat
+    build:
+        commands:
+            - echo "Checking CloudFormation template..."
+            - cfn-lint lab02/exercise2/cloudformation/main.yaml
+            - echo "Running taskcat test..."
+            - taskcat test run --template ./lab02/exercise2/cloudformation/main.yaml
